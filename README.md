@@ -11,11 +11,11 @@ Attestable Container Build will provide a monitoring service to verify network c
 
 ## Users/Personas Of The Project:
 
-Attestable Container Build will be used by System Administrators and container builders as they go about building and launching container builds.
+Attestable Container Build will be used by System Administrators and builders of container-based applications (microservices) who will eventually distribute those container images.  
 
 It targets only System Administrators and builders of containers.
 
-It will not target end users of the built containers
+It will not target end users of the built containers; however, end users can use the attested logs to make sure the container was built according to their requirements.
 
 ## Scope and Features Of The Project:
 
@@ -43,10 +43,17 @@ It will not target end users of the built containers
 
 ### Global Architectural Structure Of the Project: 
 
+![CCarchitecture](https://user-images.githubusercontent.com/56104192/134778182-0d789255-acaf-4ca6-8218-026017c2e935.png)
+
+- BPF System hooks are used to capture all relevant information regarding the container build changes within the local system, in this case, network calls and file access and their modifications.
+- All captured information will be recorded into the attestation file.
+- The attestation file will be encrypted using sha256sum and attached to the corresponding container image using oras, as well as stored locally.
+- Any user who wishes to audit the build process can access the attestation file.
+
 ### Key Design Decisions:
 - BPF System action capture: Linux’s BPF system is an extremely lightweight and powerful system that our design can leverage to capture any system action during the build process. While it will also possibly capture outside actionos not pertaining to the build process, we thought it preferable to filter through the excess data than to build a completely custom monitoring system specifically for Dockerfile monitoring.
 - Attachment to build image as an artifact: oras allows us to efficiently link the attestation file to the container image without consuming excess data or processing power. Attaching it to the build image itself also assists in later audits as only one file need be located.
-- Public/Private key encryption: 
+- Public/Private key encryption 
 
 
 ## Acceptance criteria:
@@ -60,22 +67,24 @@ Background monitor system able to attach system actions to the finished build im
 - Connect each system action to its specific line in the Dockerfile
 - Detect irregularities in subsequent builds to detect tampering of the Dockerfile
 - Use Whaler to reverse engineer the Dockerfile and check any irregularities in it versus the attestation document
+- Use sigstore database to store and distribute tamper-free attestation records
 
 
 ## Release Planning:
 
-### Release 1: (Week 5)
+- Release 1 (Week 5): BPF Hooks
 
-### Release 2: (Week 7)
+- Release 2 (Week 7): Filter relevant information from collected system data
 
-### Release 3: (Week 9)
+- Release 3 (Week 9): Formatting of attestation file
 
-### Release 4: (Week 11)
+- Release 4 (Week 11): TBD
 
-### Release 5: (Week 13)
+- Release 5 (Week 13): TBD
 
-### Release 6: (Week 15)
+- Release 6 (Week 15): TBD
 
-### Final Release:
+- Final Release: TBD
+
 
 
