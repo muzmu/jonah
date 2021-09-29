@@ -1,4 +1,20 @@
-# Blubr
+# jonah
+
+## Project Description Video:
+
+https://youtu.be/dvWrT0H46jM
+
+## Project Owner:
+
+- Shripad J Nadgowda
+
+## Team Members:
+
+- Ryan Sullivan (ryanbs@bu.edu)
+- Qipeng Zou (cloris@bu.edu)
+- Jessica Martinez Marquez (jessmtzm@bu.edu)
+- Muzammil Hussain (muz@bu.edu)
+- Ryte Richard (ryte@bu.edu)
 
 ## Vision and Goals Of The Project:
 
