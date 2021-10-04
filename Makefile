@@ -1,8 +1,8 @@
-PROBE = basic_prog.bt 
-OUTFILE = accesses.log
+PROBE = jonah.bt 
+OUTFILE = jonah.log
 
 all:
-	@echo monitoring file accesses
+	@echo starting jonah...
 	@bpftrace $(PROBE) > $(OUTFILE)
 
 ready:
