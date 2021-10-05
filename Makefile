@@ -1,4 +1,4 @@
-PROBE = jonah.bt 
+PROBE = jonah1.bt 
 OUTFILE = jonah.log
 
 all:
