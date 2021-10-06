@@ -7,7 +7,7 @@ https://youtu.be/dvWrT0H46jM
 ## Sprint Demos:
 
 ### Sprint 1:
-[*Insert link here*]
+https://youtu.be/jXRxDKvv2Ww
 
 ## Project Owner:
 
