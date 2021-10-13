@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <signal.h>
 
 #include <linux/bpf.h>
 #include <bpf/bpf.h>
@@ -18,6 +19,11 @@ int init(void) {
 					  *net_in_obj, *net_out_obj;
 	
 	if(bpf_prog_load(FILE_CREAT, BPF_PROG_TYPE_))
+	
+
+	// register signal handlers
+
+	// register daemon to handle reading buffers
 
 	fprintf("starting jonah...");
 }
