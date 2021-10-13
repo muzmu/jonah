@@ -2,13 +2,12 @@
 #include <signal.h>
 
 #include <linux/bpf.h>
-#include <bpf/bpf.h>
-#include <bpf/libbpf.h>
+#include <test_progs.h>
 
-#define FILE_CREAT 	"creat_prog.o"
-#define FILE_MOD 	"mod_prog.o"
-#define NET_IN		"net_in_prog.o"
-#define NET_OUT		"net_out_prog.o"
+#define FILE_CREAT 	"bpf_progs/creat_prog.o"
+#define FILE_MOD 	"bpf_progs/mod_prog.o"
+#define NET_IN		"bpf_progs/net_in_prog.o"
+#define NET_OUT		"bpf_progs/net_out_prog.o"
 
 int init(void) {
 	// attach BPF programs defined above **look into renaming
@@ -25,7 +24,7 @@ int init(void) {
 
 	// register daemon to handle reading buffers
 
-	fprintf("starting jonah...");
+	printf("starting jonah...\n");
 }
 
 void filter(char* line) {
@@ -42,4 +41,6 @@ void monitor_procs(int sig) {
 	// process monitor for Docker build, triggered by SIGCHLD
 }
 
-
+int main() {
+	init();
+}
