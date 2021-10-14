@@ -2,7 +2,7 @@
 #include <signal.h>
 
 #include <linux/bpf.h>
-#include <test_progs.h>
+#include <bpf/libbpf.h>
 
 #define FILE_CREAT 	"bpf_progs/creat_prog.o"
 #define FILE_MOD 	"bpf_progs/mod_prog.o"
@@ -15,10 +15,11 @@ int init(void) {
 	net_in_progfd, net_out_progfd;
 
 	struct bpf_object *creat_obj, *mod_obj, 
-					  *net_in_obj, *net_out_obj;
+			  *net_in_obj, *net_out_obj;
 	
-	if(bpf_prog_load(FILE_CREAT, BPF_PROG_TYPE_))
-	
+	// load programs into memory
+	if(bpf_prog_load(FILE_CREAT, BPF_PROG_TYPE_KPROBE, &creat_obj, &creat_progfd))
+		return -1;	
 
 	// register signal handlers
 
