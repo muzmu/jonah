@@ -1,8 +1,17 @@
-#include <linux/bpf.h>
+#include <linux/sched.h>
 
-#include <bpf/bpf_helpers.h>
+BPF_PERF_OUTPUT(events);
 
-SEC("prog")
-int creat_watch(){
-    return 0;
+struct data_t {
+	u32 pid;
+};
+
+int creat_watch(struct pt_regs *ctx){
+	struct data_t data = {};
+
+	data.pid = bpf_get_current_pid_tgid();
+	
+	events.perf_submit(ctx, &data, sizeof(data));
+
+	return 0;
 }
