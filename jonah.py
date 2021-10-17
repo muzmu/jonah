@@ -17,9 +17,11 @@ bpf_create = BPF(src_file="bpf_progs/creat_prog.c")
 
 # attach kprobes to local file access / modification / creation methods
 
-print("jonah: mounting programs\n");
+print("jonah: mounting programs\n")
 
-bpf_create.attach_kprobe(event="vfs_create", fn_name="creat_watch")
+mtpt = bpf_create.get_syscall_fnname("write")
+
+bpf_create.attach_kprobe(event=mtpt, fn_name="creat_watch")
 #bpf_mod.attach_kretprobe(event="vfs_write", fn_name="write_watch")
 #bpf_mod.attach_kretprobe(event="vfs_read", fn_name="read_watch")
 
