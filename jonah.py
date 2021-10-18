@@ -3,15 +3,12 @@
 # okay to use python for initial muont since should only be run once
 
 from __future__ import print_function
-import systemd.daemon
-import time
+import _thread
 from bcc import BPF
 from bcc.utils import printb
 
-#print("jonah: prepping log file")
 log = open("/home/fedora/jonah/jonah.log", "w+")
 
-#print("jonah: mounting programs\n")
 trigger_prog = "" #"docker"
 
 bpf_netops = BPF(src_file="bpf_progs/bpf_netops.c")
@@ -49,12 +46,22 @@ def log_tcpv6_event(cpu, data, size):
         log.write(e)
 
 bpf_fileops["events"].open_perf_buffer(log_file_event)
-#bpf_netops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
-#bpf_netops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
+bpf_netops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
+bpf_netops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
+
+def file_log_thread():
+    while True:
+        bpf_fileops.perf_buffer_poll()
+
+def net_log_thread():
+    while True:
+        bpf_netops.perf_buffer_poll()
+
+_thread.start_new_thread(file_log_thread, ())
+_thread.start_new_thread(net_log_thread, ())
 
 while True:
     try:
-        bpf_fileops.perf_buffer_poll()
-        #bpf_netops.perf_buffer_poll()
+        pass
     except KeyboardInterrupt:
         exit()
