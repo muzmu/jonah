@@ -1,9 +1,10 @@
-PROBE = jonah1.bt 
-OUTFILE = jonah.log
+CC = gcc
+CFLAGS = -g -Werror
 
-all:
-	@echo starting jonah...
-	@bpftrace $(PROBE) > $(OUTFILE)
+jonah: jonah.o
 
-ready:
-	dnf install bpftrace
+jonah.c:
+
+clean:
+	rm -f jonah.o jonah jonah.log
+
