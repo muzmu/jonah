@@ -6,5 +6,5 @@ jonah: jonah.o
 jonah.c:
 
 clean:
-	rm -f jonah.o jonah
+	rm -f jonah.o jonah jonah.log
 

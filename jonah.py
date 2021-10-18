@@ -9,7 +9,10 @@ import time
 from bcc import BPF
 from bcc.utils import printb
 
-print("jonah: mounting programs\n")
+#print("jonah: prepping log file")
+log = open("jonah.log", "w+")
+
+#print("jonah: mounting programs\n")
 
 b = BPF(src_file="bpf_progs/bpf_fileops.c")
 
@@ -20,7 +23,9 @@ b.attach_kprobe(event="vfs_create", fn_name="do_create")
 
 def log_event(cpu, data, size):
     event = b["events"].event(data)
-    print("PROC: %d \t OP: %s" % (event.pid, event.str.decode('utf-8', 'replace')))
+    e = "PROC: %d \t OP: %s \t NAME: %s\n" % (event.pid, event.str.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'))
+    #print(e)
+    log.write(e)
 
 b["events"].open_perf_buffer(log_event)
 while True:
