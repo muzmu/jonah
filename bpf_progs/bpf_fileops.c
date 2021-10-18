@@ -1,40 +1,42 @@
 #include <linux/sched.h>
+#include <linux/fs_struct.h>
+#include <linux/dcache.h>
+#include <linux/string.h>
 
 BPF_PERF_OUTPUT(events);
 
 struct data_t {
 	u32 pid;
-	u32 op;
 	char str[8];
 	char comm[TASK_COMM_LEN];
+	char filename[TASK_COMM_LEN];
 };
 
-/*
-enum op_types {
-	READ = 1,
-	WRITE,
-	OPEN,
-	CREATE,
-	MAXOP
-};*/
 
 int do_read(struct pt_regs *ctx){
 	struct data_t data = {};
+	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
+	struct path *p = &(t->fs->pwd);
+
 	u32 pid;
     if (!PT_REGS_RC(ctx))
     	return 0;
     
-	data.op = 1;
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
-	data.str[0]='r';
-	data.str[1]='e';
-	data.str[2]='a';
-	data.str[3]='d';
-	data.str[4]= 0;
+	strcpy(data.str, "read");
+	int i = 0;
+	for(i; i < TASK_COMM_LEN; i++){
+		data.filename[i] = (p->dentry->d_name.name)[i];
+		if((p->dentry->d_iname)[i+1] == '\0')
+			break;
+	}
+	//strcpy(data.filename, (char*)(p->dentry->d_iname));
+	//sprintf(data.filename, "%lu", p->dentry->d_time);
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
+	
 	events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
@@ -42,20 +44,22 @@ int do_read(struct pt_regs *ctx){
 
 int do_write(struct pt_regs *ctx){
 	struct data_t data = {};
+	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
+	struct path *p = &(t->fs->pwd);
 	u32 pid;
     if (!PT_REGS_RC(ctx))
     	return 0;
     
-	data.op = 1;
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
-	data.str[0]='w';
-	data.str[1]='r';
-	data.str[2]='i';
-	data.str[3]='t';
-	data.str[4]='e';
-	data.str[5]= 0;	
+	strcpy(data.str, "write");
+	int i = 0;
+	for(i; i < TASK_COMM_LEN; i++){
+		data.filename[i] = (p->dentry->d_name.name)[i];
+		if((p->dentry->d_iname)[i+1] == '\0')
+			break;
+	}
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
 	events.perf_submit(ctx, &data, sizeof(data));
@@ -65,19 +69,22 @@ int do_write(struct pt_regs *ctx){
 
 int do_open(struct pt_regs *ctx){
 	struct data_t data = {};
+	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
+	struct path *p = &(t->fs->pwd);
 	u32 pid;
     if (!PT_REGS_RC(ctx))
     	return 0;
     
-	data.op = 1;
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
-	data.str[0]='o';
-	data.str[1]='p';
-	data.str[2]='e';
-	data.str[3]='n';
-	data.str[4]= 0;
+	strcpy(data.str, "open");
+	int i = 0;
+	for(i; i < TASK_COMM_LEN; i++){
+		data.filename[i] = (p->dentry->d_name.name)[i];
+		if((p->dentry->d_iname)[i+1] == '\0')
+			break;
+	}
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
 	events.perf_submit(ctx, &data, sizeof(data));
@@ -87,21 +94,22 @@ int do_open(struct pt_regs *ctx){
 
 int do_create(struct pt_regs *ctx){
 	struct data_t data = {};
+	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
+	struct path *p = &(t->fs->pwd);
 	u32 pid;
     if (!PT_REGS_RC(ctx))
     	return 0;
     
-	data.op = 1;
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
-	data.str[0]='c';
-	data.str[1]='r';
-	data.str[2]='e';
-	data.str[3]='a';
-	data.str[4]='t';
-	data.str[5]='e';
-	data.str[6]= 0;
+	strcpy(data.str, "create");
+	int i = 0;
+	for(i; i < TASK_COMM_LEN; i++){
+		data.filename[i] = (p->dentry->d_name.name)[i];
+		if((p->dentry->d_iname)[i+1] == '\0')
+			break;
+	}
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
 	events.perf_submit(ctx, &data, sizeof(data));
