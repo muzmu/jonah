@@ -2,9 +2,9 @@
 install: jonah.service
 	@cp jonah.service /etc/systemd/system/jonah.service
 	@sudo systemctl daemon-reload
+	@echo "daemonizing jonah..."
 	@sudo systemctl enable jonah.service
 	@sudo systemctl start jonah.service
-	@echo "daemonizing jonah..."
 	@sudo systemctl status jonah.service
 
 uninstall:
