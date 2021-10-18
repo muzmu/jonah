@@ -1,0 +1,9 @@
+[Unit]
+Description=Jonah Dockerfile monitor
+After=multi-user.target
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/bin/python3 /home/fedora/jonah/jonah.py
+[Install]
+WantedBy=multi-user.target
