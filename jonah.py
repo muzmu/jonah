@@ -28,18 +28,21 @@ def log_file_event(cpu, data, size):
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
         e = "PID: %d \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))
         log.write(e)
+        log.flush()
 
 def log_tcpv4_event(cpu, data, size):
     event = bpf_netops["tcpv4_events"].event(data)
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
         e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
         log.write(e)
+        log.flush()
 
 def log_tcpv6_event(cpu, data, size):
     event = bpf_netops["tcpv6_events"].event(data)
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
         e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
         log.write(e)
+        log.flush()
 
 bpf_fileops["events"].open_perf_buffer(log_file_event)
 bpf_netops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
