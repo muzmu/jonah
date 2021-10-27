@@ -8,6 +8,7 @@ install: jonah.service
 	@sudo systemctl status jonah.service
 
 uninstall:
+	@echo "uninstalling daemon jonah..."
 	@sudo systemctl stop jonah.service
 	@sudo rm -rf /etc/systemd/system/jonah.service
 
