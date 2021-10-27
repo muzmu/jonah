@@ -3,15 +3,16 @@
 # okay to use python for initial muont since should only be run once
 
 from __future__ import print_function
-
+import _thread
 from bcc import BPF
-from bcc.utils import printb
+from socket import (
+            inet_ntop, AF_INET, AF_INET6, __all__ as socket_all, __dict__ as socket_dct
+            )
+from struct import pack
 
-#print("jonah: prepping log file")
-log = open("jonah.log", "w+")
+log = open("/home/fedora/jonah/jonah.log", "w+")
 
-#print("jonah: mounting programs\n")
-trigger_prog = "" #"docker"
+trigger_prog = "" #"docker" "curl"
 
 bpf_netops = BPF(src_file="bpf_progs/bpf_netops.c")
 bpf_fileops = BPF(src_file="bpf_progs/bpf_fileops.c")
@@ -30,30 +31,40 @@ def log_file_event(cpu, data, size):
     event = bpf_fileops["events"].event(data)
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
         e = "PID: %d \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))
-        #print(e)
         log.write(e)
+        log.flush()
 
 def log_tcpv4_event(cpu, data, size):
     event = bpf_netops["tcpv4_events"].event(data)
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
-        e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
-        #print(e)
+        e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %-39s \n" % (event.pid, event.op.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'),inet_ntop(AF_INET, pack("I", event.addr)).encode())
         log.write(e)
+        log.flush()
 
 def log_tcpv6_event(cpu, data, size):
     event = bpf_netops["tcpv6_events"].event(data)
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
         e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode('utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
-        #print(e)
         log.write(e)
+        log.flush()
 
-#bpf_fileops["events"].open_perf_buffer(log_file_event)
+bpf_fileops["events"].open_perf_buffer(log_file_event)
 bpf_netops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
 bpf_netops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
 
+def file_log_thread():
+    while True:
+        bpf_fileops.perf_buffer_poll()
+
+def net_log_thread():
+    while True:
+        bpf_netops.perf_buffer_poll()
+
+_thread.start_new_thread(file_log_thread, ())
+_thread.start_new_thread(net_log_thread, ())
+
 while True:
     try:
-        #bpf_fileops.perf_buffer_poll()
-        bpf_netops.perf_buffer_poll()
+        pass
     except KeyboardInterrupt:
         exit()

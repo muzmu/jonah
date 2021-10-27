@@ -44,7 +44,11 @@ BPF_PERF_OUTPUT(tcpv6_events);
 
 int do_tcpv4(struct pt_regs *ctx, struct sock *sk){
     struct data_t data = {};
-    u32 saddr = sk->__sk_common.skc_rcv_saddr;
+    struct sock *skp = sk;
+    struct inet_sock *sockp = (struct inet_sock *)skp;
+    u32 saddr = 0;
+    bpf_probe_read_kernel(&saddr, sizeof(saddr), &sockp->inet_saddr);
+    //u32 saddr = sk->__sk_common.skc_daddr;
     u32 pid;
     pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
