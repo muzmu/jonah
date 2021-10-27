@@ -48,7 +48,7 @@ int do_tcpv4(struct pt_regs *ctx, struct sock *sk){
     struct inet_sock *sockp = (struct inet_sock *)skp;
     u32 saddr = 0;
     bpf_probe_read_kernel(&saddr, sizeof(saddr), &sockp->inet_saddr);
-    //u32 saddr = sk->__sk_common.skc_daddr;
+    
     u32 pid;
     pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
@@ -64,16 +64,20 @@ int do_tcpv4(struct pt_regs *ctx, struct sock *sk){
 
 int do_tcpv6(struct pt_regs *ctx, struct sock *sk){
     struct data_t data = {};
-    u32 saddr = sk->__sk_common.skc_daddr;
+    struct sock *skp = sk;
+    struct inet_sock *sockp = (struct inet_sock *)skp;
+    u32 saddr = 0;
+    bpf_probe_read_kernel(&saddr, sizeof(saddr), &sockp->inet_saddr);
+    
     u32 pid;
     pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
-    strcpy(data.op, "TCP IPv6");
+    strcpy(data.op, "TCP IPv4");
     data.addr = saddr;
     bpf_get_current_comm(&(data.comm), sizeof(data.comm));
 
-    tcpv4_events.perf_submit(ctx, &data, sizeof(data));
+    tcpv6_events.perf_submit(ctx, &data, sizeof(data));
     
     return 0;
 }
