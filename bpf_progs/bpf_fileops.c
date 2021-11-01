@@ -5,8 +5,8 @@
 #include <uapi/linux/ptrace.h>
 #include <linux/blkdev.h>
 
-
 BPF_PERF_OUTPUT(events);
+BPF_ARRAY(filter_arr, u32, 1);
 
 struct data_t {
 	u32 pid;
@@ -15,42 +15,55 @@ struct data_t {
 	char filename[DNAME_INLINE_LEN];
 };
 
+static int is_filter_proc(char filename[]){
+	return (filename[0]=='d' && filename[1] == 'o' && filename[2] == 'c' 
+	&& filename[3] == 'k' && filename[4] == 'e' && filename[5] == 'r' 
+	&& filename[6] == 'd');
+}
+
+static int is_filter_pid(u32 pid){
+	u32 key = 0, *val, fpid;
+	val = filter_arr.lookup(&key);
+	if(!val)
+		return -1;
+	fpid = *val;
+	if(fpid != pid)
+		return 0;
+	return 1;
+}
+
+static void register_filter_pid(u32 pid){
+	u32 key = 0, *val;
+	val = filter_arr.lookup(&key);
+	if(val)
+		*val = pid;
+}
 
 int do_read(struct pt_regs *ctx,struct file *file){
 	struct data_t data = {};
 	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
 	struct path *p = &(t->fs->pwd);
-	
-
 	u32 pid;
-    	if (!PT_REGS_RC(ctx)){
-    		return 0;
-	}
+    if (!PT_REGS_RC(ctx))
+    	return 0;
+
  	struct dentry *de = file->f_path.dentry;
 	int mode = file->f_inode->i_mode;
 	struct qstr d_name = de->d_name;
-		
-		bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
+	bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
 	
-   
 	pid = bpf_get_current_pid_tgid() >> 32;
-    	data.pid = pid;
+    data.pid = pid;
 
 	strcpy(data.str, "read");
-	int i = 0;
-	/*
-	for(i; i < TASK_COMM_LEN; i++){
-		data.filename[i] = (p->dentry->d_name.name)[i];
-		if((p->dentry->d_iname)[i+1] == '\0')
-			break;
-	}*/
-	
-	//strcpy(data.filename, (char*)(p->dentry->d_iname));
-	//sprintf(data.filename, "%lu", p->dentry->d_time);
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
+
+	if(is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
+		register_filter_pid(pid);
 	
-	events.perf_submit(ctx, &data, sizeof(data));
+	if(is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
 }
@@ -63,26 +76,23 @@ int do_write(struct pt_regs *ctx,struct file *file){
     if (!PT_REGS_RC(ctx))
     	return 0;
 
-    	struct dentry *de = file->f_path.dentry;
-        int mode = file->f_inode->i_mode;
-        struct qstr d_name = de->d_name;
-        bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
-    
+ 	struct dentry *de = file->f_path.dentry;
+	int mode = file->f_inode->i_mode;
+	struct qstr d_name = de->d_name;
+	bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
+	
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
 	strcpy(data.str, "write");
-	int i = 0;
-	/*
-	for(i; i < TASK_COMM_LEN; i++){
-		data.filename[i] = (p->dentry->d_name.name)[i];
-		if((p->dentry->d_iname)[i+1] == '\0')
-			break;
-	}
-	*/
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
-	events.perf_submit(ctx, &data, sizeof(data));
+
+	if(is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
+		register_filter_pid(pid);
+	
+	if(is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
 }
@@ -95,25 +105,23 @@ int do_open(struct pt_regs *ctx,struct file *file){
     if (!PT_REGS_RC(ctx))
     	return 0;
 
-    struct dentry *de = file->f_path.dentry;
-        int mode = file->f_inode->i_mode;
-        struct qstr d_name = de->d_name;
-        bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
-    
+ 	struct dentry *de = file->f_path.dentry;
+	int mode = file->f_inode->i_mode;
+	struct qstr d_name = de->d_name;
+	bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
+	
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
 	strcpy(data.str, "open");
-	int i = 0;
-	/*
-	for(i; i < TASK_COMM_LEN; i++){
-		data.filename[i] = (p->dentry->d_name.name)[i];
-		if((p->dentry->d_iname)[i+1] == '\0')
-			break;
-	}*/
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
-	events.perf_submit(ctx, &data, sizeof(data));
+
+	if(is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
+		register_filter_pid(pid);
+	
+	if(is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
 }
@@ -126,25 +134,23 @@ int do_create(struct pt_regs *ctx,struct file *file){
     if (!PT_REGS_RC(ctx))
     	return 0;
 
-    struct dentry *de = file->f_path.dentry;
-        int mode = file->f_inode->i_mode;
-        struct qstr d_name = de->d_name;
-        bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
-    
+ 	struct dentry *de = file->f_path.dentry;
+	int mode = file->f_inode->i_mode;
+	struct qstr d_name = de->d_name;
+	bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
+	
 	pid = bpf_get_current_pid_tgid() >> 32;
     data.pid = pid;
 
 	strcpy(data.str, "create");
-	int i = 0;
-	/*
-	for(i; i < TASK_COMM_LEN; i++){
-		data.filename[i] = (p->dentry->d_name.name)[i];
-		if((p->dentry->d_iname)[i+1] == '\0')
-			break;
-	}*/
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
-	events.perf_submit(ctx, &data, sizeof(data));
+
+	if(is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
+		register_filter_pid(pid);
+	
+	if(is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
 }
