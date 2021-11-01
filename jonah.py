@@ -30,8 +30,6 @@ bpf_fileops.attach_kprobe(event="vfs_read",   fn_name="do_read")
 
 def log_file_event(cpu, data, size):
     event = bpf_fileops["events"].event(data)
-#    if event.filename.decode('utf-8', 'replace') == trigger_prog:
-#        bpf_fileops["filter_arr"][ct.c_int(0)].value = event.pid
     e = "PID: %d \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode(
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))
     log.write(e)
