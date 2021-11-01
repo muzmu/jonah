@@ -19,9 +19,9 @@ bpf_netops = BPF(src_file="bpf_progs/bpf_netops.c")
 bpf_fileops = BPF(src_file="bpf_progs/bpf_fileops.c")
 
 bpf_fileops.attach_kprobe(event="vfs_read",   fn_name="do_read")
-#bpf_fileops.attach_kprobe(event="vfs_write",  fn_name="do_write")
-#bpf_fileops.attach_kprobe(event="vfs_open",   fn_name="do_open")
-#bpf_fileops.attach_kprobe(event="vfs_create", fn_name="do_create")
+bpf_fileops.attach_kprobe(event="vfs_write",  fn_name="do_write")
+bpf_fileops.attach_kprobe(event="vfs_open",   fn_name="do_open")
+bpf_fileops.attach_kprobe(event="vfs_create", fn_name="do_create")
 
 #bpf_netops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
 #bpf_netops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
