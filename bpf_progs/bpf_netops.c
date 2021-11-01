@@ -1,3 +1,4 @@
+#include <linux/bpf.h>
 #include <linux/sched.h>
 #include <linux/string.h>
 #include <uapi/linux/ptrace.h>
@@ -41,6 +42,7 @@ struct data_t {
 
 BPF_PERF_OUTPUT(tcpv4_events);
 BPF_PERF_OUTPUT(tcpv6_events);
+BPF_PERF_OUTPUT(raw_events);
 
 int do_tcpv4(struct pt_regs *ctx, struct sock *sk){
     struct data_t data = {};
@@ -80,4 +82,9 @@ int do_tcpv6(struct pt_regs *ctx, struct sock *sk){
     tcpv6_events.perf_submit(ctx, &data, sizeof(data));
     
     return 0;
+}
+
+int raw_monitor(struct __sk_buff *skb){
+    
+    return -1;
 }
