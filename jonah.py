@@ -9,6 +9,7 @@ import ctypes as ct
 from socket import (
     inet_ntop, AF_INET, AF_INET6, __all__ as socket_all, __dict__ as socket_dct
 )
+import socket
 from struct import pack
 
 log = open("/home/fedora/jonah/jonah.log", "w+")
@@ -23,7 +24,10 @@ bpf_fileops.attach_kprobe(event="vfs_write",  fn_name="do_write")
 bpf_fileops.attach_kprobe(event="vfs_open",   fn_name="do_open")
 bpf_fileops.attach_kprobe(event="vfs_create", fn_name="do_create")
 
-#bpf_netops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
+
+#function_skb_matching = bpf_netops.load_func("packet_monitor", BPF.SOCKET_FILTER)
+#BPF.attach_raw_socket(function_skb_matching, "eth0")
+bpf_netops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
 #bpf_netops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
 #bpf_netops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
 #bpf_netops.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
@@ -42,7 +46,14 @@ def log_tcpv4_event(cpu, data, size):
             'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), inet_ntop(AF_INET, pack("I", event.addr)).encode())
         log.write(e)
         log.flush()
-
+"""
+def log_raw_event(cpu,data, size):
+    event = bpf_netops["raw_events"].event(data)
+    #if event.comm.decode('utf-8', 'replace') != trigger_prog:
+    e = "PID: %d \t ADDR: %-39s \n" % (0,inet_ntop(AF_INET, pack("I", event.saddr)).encode())
+    log.write(e)
+    log.flush()
+"""
 def log_tcpv6_event(cpu, data, size):
     event = bpf_netops["tcpv6_events"].event(data)
     if event.comm.decode('utf-8', 'replace') != trigger_prog:
@@ -54,6 +65,7 @@ def log_tcpv6_event(cpu, data, size):
 bpf_fileops["events"].open_perf_buffer(log_file_event)
 bpf_netops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
 bpf_netops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
+#bpf_netops["raw_events"].open_perf_buffer(log_raw_event)
 
 def file_log_thread():
     while True:
@@ -64,7 +76,7 @@ def net_log_thread():
         bpf_netops.perf_buffer_poll()
 
 _thread.start_new_thread(file_log_thread, ())
-#_thread.start_new_thread(net_log_thread, ())
+_thread.start_new_thread(net_log_thread, ())
 
 while True:
     try:
