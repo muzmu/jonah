@@ -12,6 +12,9 @@ https://youtu.be/jXRxDKvv2Ww
 ### Sprint 2:
 https://www.youtube.com/watch?v=jNb1uLlUOnU
 
+### Sprint 3:
+https://youtu.be/sUAkF1inqBw
+
 ## Project Owner:
 
 - Shripad J Nadgowda
@@ -32,6 +35,7 @@ Attestable Container Build will provide a monitoring service to verify network c
 - **Provide reviewable documentation of the build process**
 - **Allow for efficient audits of the build process**
 
+The purpose of jonah is to become the building block of a platform used to verify the container build process. 
 
 ## Users/Personas Of The Project:
 
@@ -75,7 +79,7 @@ It will not target end users of the built containers; however, end users can use
 - Any user who wishes to audit the build process can access the attestation file.
 
 ### Key Design Decisions:
-- BPF System action capture: Linux’s BPF system is an extremely lightweight and powerful system that our design can leverage to capture any system action during the build process. While it will also possibly capture outside actionos not pertaining to the build process, we thought it preferable to filter through the excess data than to build a completely custom monitoring system specifically for Dockerfile monitoring.
+- BPF System action capture: Linux’s BPF system is an extremely lightweight and powerful system that our design can leverage to capture any system action during the build process. While it will also possibly capture outside actions not pertaining to the build process, we thought it preferable to filter through the excess data than to build a completely custom monitoring system specifically for Dockerfile monitoring.
 - Attachment to build image as an artifact: oras allows us to efficiently link the attestation file to the container image without consuming excess data or processing power. Attaching it to the build image itself also assists in later audits as only one file need be located.
 - Public/Private key encryption 
 
@@ -100,9 +104,9 @@ Background monitor system able to attach system actions to the finished build im
 
 - Release 2 (Week 7): Filter relevant information from collected system data
 
-- Release 3 (Week 9): Formatting of attestation file
+- Release 3 (Week 9): Set up pre-filtering approach to log docker build information
 
-- Release 4 (Week 11): TBD
+- Release 4 (Week 11): Formatting of attestation file
 
 - Release 5 (Week 13): TBD
 
