@@ -15,6 +15,7 @@
 BPF_PERF_OUTPUT(tcpv4_events);
 BPF_PERF_OUTPUT(tcpv6_events);
 BPF_PERF_OUTPUT(events);
+
 BPF_ARRAY(filter_arr, u32, 1);
 
 struct data_file
@@ -23,35 +24,7 @@ struct data_file
 	char str[8];
 	char comm[TASK_COMM_LEN];
 	char filename[DNAME_INLINE_LEN];
-	char path_dir[PATH_LEN];
-};
-
-struct tcp_ipv4_event_t
-{
-	u64 ts_ns;
-	u32 type;
-	u32 pid;
-	char comm[TASK_COMM_LEN];
-	u8 ip;
-	u32 saddr;
-	u32 daddr;
-	u16 sport;
-	u16 dport;
-	u32 netns;
-};
-
-struct tcp_ipv6_event_t
-{
-	u64 ts_ns;
-	u32 type;
-	u32 pid;
-	char comm[TASK_COMM_LEN];
-	unsigned __int128 saddr;
-	unsigned __int128 daddr;
-	u16 sport;
-	u16 dport;
-	u32 netns;
-	u8 ip;
+	//char path_dir[PATH_LEN];
 };
 
 struct data_net
@@ -110,7 +83,7 @@ int do_read(struct pt_regs *ctx, struct file *file)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 	{
 		register_filter_pid(pid);
-		dentry_path_raw(de, data.path_dir, PATH_LEN);
+		//dentry_path_raw(de, data.path_dir, PATH_LEN);
 	}
 
 	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
