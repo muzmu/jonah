@@ -14,69 +14,51 @@ from struct import pack
 
 log = open("/home/fedora/jonah/jonah.log", "w+")
 
-trigger_prog = "" #"dockerd"
+bpf_ops = BPF(src_file="bpf_progs/bpf_ops.c")
 
-bpf_netops = BPF(src_file="bpf_progs/bpf_netops.c")
-bpf_fileops = BPF(src_file="bpf_progs/bpf_fileops.c")
+bpf_ops.attach_kprobe(event="vfs_read",   fn_name="do_read")
+bpf_ops.attach_kprobe(event="vfs_write",  fn_name="do_write")
+bpf_ops.attach_kprobe(event="vfs_open",   fn_name="do_open")
+bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
 
-bpf_fileops.attach_kprobe(event="vfs_read",   fn_name="do_read")
-bpf_fileops.attach_kprobe(event="vfs_write",  fn_name="do_write")
-bpf_fileops.attach_kprobe(event="vfs_open",   fn_name="do_open")
-bpf_fileops.attach_kprobe(event="vfs_create", fn_name="do_create")
-
-
-#function_skb_matching = bpf_netops.load_func("packet_monitor", BPF.SOCKET_FILTER)
-#BPF.attach_raw_socket(function_skb_matching, "eth0")
-bpf_netops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-#bpf_netops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-#bpf_netops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
-#bpf_netops.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+bpf_ops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
+bpf_ops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
+bpf_ops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+bpf_ops.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
 
 def log_file_event(cpu, data, size):
-    event = bpf_fileops["events"].event(data)
-    e = "PID: %d \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode(
-        'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))
+    event = bpf_ops["events"].event(data)
+    e = "PID: %d \t OP: %s \t NAME: %s \t FILE: %s \t PATH: %s \n" % (event.pid, event.str.decode(
+        'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))#, event.path_dir.decode('utf-8', 'replace'))
+    print(e)
     log.write(e)
     log.flush()
 
 def log_tcpv4_event(cpu, data, size):
-    event = bpf_netops["tcpv4_events"].event(data)
-    if event.comm.decode('utf-8', 'replace') != trigger_prog:
-        e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %-39s \n" % (event.pid, event.op.decode(
-            'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), inet_ntop(AF_INET, pack("I", event.addr)).encode())
-        log.write(e)
-        log.flush()
-"""
-def log_raw_event(cpu,data, size):
-    event = bpf_netops["raw_events"].event(data)
-    #if event.comm.decode('utf-8', 'replace') != trigger_prog:
-    e = "PID: %d \t ADDR: %-39s \n" % (0,inet_ntop(AF_INET, pack("I", event.saddr)).encode())
+    event = bpf_ops["tcpv4_events"].event(data)
+    e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %-39s \n" % (event.pid, event.op.decode(
+        'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), inet_ntop(AF_INET, pack("I", event.addr)).encode())
+    print(e)
     log.write(e)
     log.flush()
-"""
+
 def log_tcpv6_event(cpu, data, size):
-    event = bpf_netops["tcpv6_events"].event(data)
-    if event.comm.decode('utf-8', 'replace') != trigger_prog:
-        e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode(
-            'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
-        log.write(e)
-        log.flush()
+    event = bpf_ops["tcpv6_events"].event(data)
+    e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode(
+        'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
+    print(e)
+    log.write(e)
+    log.flush()
 
-bpf_fileops["events"].open_perf_buffer(log_file_event)
-bpf_netops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
-bpf_netops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
-#bpf_netops["raw_events"].open_perf_buffer(log_raw_event)
+bpf_ops["events"].open_perf_buffer(log_file_event)
+bpf_ops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
+bpf_ops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
 
-def file_log_thread():
+def log_thread():
     while True:
-        bpf_fileops.perf_buffer_poll()
+        bpf_ops.perf_buffer_poll()
 
-def net_log_thread():
-    while True:
-        bpf_netops.perf_buffer_poll()
-
-_thread.start_new_thread(file_log_thread, ())
-_thread.start_new_thread(net_log_thread, ())
+_thread.start_new_thread(log_thread, ())
 
 while True:
     try:
