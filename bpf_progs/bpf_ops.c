@@ -106,7 +106,7 @@ int do_read(struct pt_regs *ctx, struct file *file)
 
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0){
 		register_filter_pid(pid);
-		events.perf_submit(ctx, &data, sizeof(data));
+		//events.perf_submit(ctx, &data, sizeof(data));
 	}
 
 	if (is_filter_pid_parent_any_level(t) == 1)
