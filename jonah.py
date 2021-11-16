@@ -17,38 +17,38 @@ log = open("/home/fedora/jonah/jonah.log", "w+")
 bpf_ops = BPF(src_file="bpf_progs/bpf_ops.c")
 
 bpf_ops.attach_kprobe(event="vfs_read",   fn_name="do_read")
-bpf_ops.attach_kprobe(event="vfs_write",  fn_name="do_write")
-bpf_ops.attach_kprobe(event="vfs_open",   fn_name="do_open")
-bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
+#bpf_ops.attach_kprobe(event="vfs_write",  fn_name="do_write")
+#bpf_ops.attach_kprobe(event="vfs_open",   fn_name="do_open")
+#bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
 
-bpf_ops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-bpf_ops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-bpf_ops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
-bpf_ops.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+#bpf_ops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
+#bpf_ops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
+#bpf_ops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+#bpf_ops.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
 
 def log_file_event(cpu, data, size):
     event = bpf_ops["events"].event(data)
-    e = "PID: %d \t OP: %s \t NAME: %s \t FILE: %s \t PATH: %s \n" % (event.pid, event.str.decode(
+    e = "PID: %s \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode(
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))#, event.path_dir.decode('utf-8', 'replace'))
     print(e)
-    log.write(e)
-    log.flush()
+    #log.write(e)
+    #log.flush()
 
 def log_tcpv4_event(cpu, data, size):
     event = bpf_ops["tcpv4_events"].event(data)
     e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %-39s \n" % (event.pid, event.op.decode(
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), inet_ntop(AF_INET, pack("I", event.addr)).encode())
     print(e)
-    log.write(e)
-    log.flush()
+    #log.write(e)
+    #log.flush()
 
 def log_tcpv6_event(cpu, data, size):
     event = bpf_ops["tcpv6_events"].event(data)
     e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %d \n" % (event.pid, event.op.decode(
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
     print(e)
-    log.write(e)
-    log.flush()
+    #log.write(e)
+    #log.flush()
 
 bpf_ops["events"].open_perf_buffer(log_file_event)
 bpf_ops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)

@@ -37,27 +37,51 @@ struct data_net
 
 static int is_filter_proc(char filename[])
 {
-	return (filename[0] == 'd' && filename[1] == 'o' && filename[2] == 'c' && filename[3] == 'k' && filename[4] == 'e' && filename[5] == 'r' && filename[6] == 'd');
+	return (filename[0] == 'd' && filename[1] == 'o' && filename[2] == 'c' && filename[3] == 'k' 
+	&& filename[4] == 'e' && filename[5] == 'r' && filename[6] == 'd');
 }
 
 static int is_filter_pid(u32 pid)
 {
 	u32 key = 0, *val, fpid;
 	val = filter_arr.lookup(&key);
-	if (!val)
+	if (!val || *val == 0){
 		return -1;
+	}
 	fpid = *val;
-	if (fpid != pid)
-		return 0;
-	return 1;
+	if (fpid == pid){
+		return 1;
+	}
+	return 0;
+}
+
+static int is_filter_pid_parent_any_level(struct task_struct *t){
+	u32 key = 0, *val, fpid,pid;
+	val = filter_arr.lookup(&key);
+	pid = t->pid;
+	if (!val || *val == 0){
+		return -1;
+	}
+	fpid = *val;
+	int i;
+	for(i = 0; i < 10; i++) {
+		if (fpid == pid){
+			return 1;
+		}
+
+		t=t->real_parent;
+		pid = t->pid;
+		if(pid == 1)
+			break;
+	}
+
+	return 0;
 }
 
 static void register_filter_pid(u32 pid)
 {
-	u32 key = 0, *val;
-	val = filter_arr.lookup(&key);
-	if (val)
-		*val = pid;
+	u32 key = 0;
+	filter_arr.update(&key, &pid);
 }
 
 int do_read(struct pt_regs *ctx, struct file *file)
@@ -73,20 +97,19 @@ int do_read(struct pt_regs *ctx, struct file *file)
 	struct qstr d_name = de->d_name;
 	bpf_probe_read_kernel(&data.filename, sizeof(data.filename), d_name.name);
 
-	pid = bpf_get_current_pid_tgid() >> 32;
+	pid = bpf_get_current_pid_tgid() >>32;
 	data.pid = pid;
 
 	strcpy(data.str, "read");
 
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
 
-	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
-	{
+	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0){
 		register_filter_pid(pid);
-		//dentry_path_raw(de, data.path_dir, PATH_LEN);
+		events.perf_submit(ctx, &data, sizeof(data));
 	}
 
-	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+	if (is_filter_pid_parent_any_level(t) == 1)
 		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
