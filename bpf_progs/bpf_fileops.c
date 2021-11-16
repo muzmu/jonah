@@ -4,9 +4,25 @@
 #include <linux/string.h>
 #include <uapi/linux/ptrace.h>
 #include <linux/blkdev.h>
+#include <linux/net.h>
+#include <uapi/linux/un.h>
+#include <net/af_unix.h>
+
+#define MAX_SEG_SIZE 1024 * 50
+#define MAX_SEGS_PER_MSG 10
+
+struct packet {
+    u32 pid;
+    u32 peer_pid;
+    u32 len;
+    char comm[TASK_COMM_LEN];
+    char data[MAX_SEG_SIZE];
+};
 
 BPF_PERF_OUTPUT(events);
 BPF_ARRAY(filter_arr, u32, 1);
+BPF_ARRAY(packet_array, struct packet, NR_CPUS);
+BPF_PERF_OUTPUT(unix_sock_events);
 
 struct data_t {
 	u32 pid;
@@ -37,6 +53,54 @@ static void register_filter_pid(u32 pid){
 	val = filter_arr.lookup(&key);
 	if(val)
 		*val = pid;
+}
+
+int do_unix_sock(struct pt_regs *ctx, struct socket *sock, struct msghdr *msg, size_t len)
+{
+    struct packet *packet;
+    struct unix_address *addr;
+    char *buf;
+    unsigned int n, match = 0, offset;
+    struct iov_iter *iter;
+    const struct kvec *iov;
+    struct pid *peer_pid;
+
+    n = bpf_get_smp_processor_id();
+    packet = packet_array.lookup(&n);
+    if (packet == NULL)
+        return 0;
+
+    packet->pid = bpf_get_current_pid_tgid() >> 32;
+    bpf_get_current_comm(&packet->comm, sizeof(packet->comm));
+    packet->peer_pid = sock->sk->sk_peer_pid->numbers[0].nr;
+
+    iter = &msg->msg_iter;
+    if ((iter->type & WRITE) == 0 || iter->iov_offset != 0) {
+        packet->len = len;
+        unix_sock_events.perf_submit(ctx, packet, offsetof(struct packet, data));
+        return 0;
+    }
+
+    iov = iter->kvec;
+
+    #pragma unroll
+    for (int i = 0; i < MAX_SEGS_PER_MSG; i++) {
+        if (i >= iter->nr_segs)
+            break;
+
+        packet->len = iov->iov_len;
+
+        buf = iov->iov_base;
+        n = iov->iov_len;
+        bpf_probe_read_kernel(&packet->data, n > sizeof(packet->data) ? sizeof(packet->data) : n, buf);
+
+        n += offsetof(struct packet, data);
+        unix_sock_events.perf_submit(ctx, packet, n > sizeof(*packet) ? sizeof(*packet) : n);
+
+        iov++;
+    }
+
+    return 0;
 }
 
 int do_read(struct pt_regs *ctx,struct file *file){
