@@ -78,7 +78,7 @@ static int is_filter_pid(u32 pid)
 static int is_filter_pid_parent_any_level(struct task_struct *t){
 	u32 key = 0, *val, fpid,pid;
 	val = filter_arr.lookup(&key);
-	pid = t->pid;
+	pid = t->tgid;
 	if (!val || *val == 0){
 		return -1;
 	}
@@ -90,7 +90,7 @@ static int is_filter_pid_parent_any_level(struct task_struct *t){
 		}
 
 		t=t->real_parent;
-		pid = t->pid;
+		pid = t->tgid;
 		if(pid == 1)
 			break;
 	}
@@ -186,8 +186,9 @@ int do_read(struct pt_regs *ctx, struct file *file)
 		//events.perf_submit(ctx, &data, sizeof(data));
 	}
 
-	if (is_filter_pid_parent_any_level(t) == 1)
+	if (is_filter_pid_parent_any_level(t) == 1){
 		events.perf_submit(ctx, &data, sizeof(data));
+	}
 
 	return 0;
 }
@@ -216,9 +217,9 @@ int do_write(struct pt_regs *ctx, struct file *file)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+	if (is_filter_pid_parent_any_level(t) == 1){
 		events.perf_submit(ctx, &data, sizeof(data));
-
+	}
 	return 0;
 }
 
@@ -245,7 +246,7 @@ int do_open(struct pt_regs *ctx, struct file *file)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+	if (is_filter_pid_parent_any_level(t) == 1)
 		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
@@ -274,7 +275,7 @@ int do_create(struct pt_regs *ctx, struct file *file)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+	if (is_filter_pid_parent_any_level(t) == 1)
 		events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
@@ -301,7 +302,7 @@ int do_tcpv4(struct pt_regs *ctx, struct sock *sk)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+	if (is_filter_pid_parent_any_level(t) == 1)
 		tcpv4_events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;
@@ -328,7 +329,7 @@ int do_tcpv6(struct pt_regs *ctx, struct sock *sk)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (is_filter_pid(pid) || is_filter_pid(t->real_parent->pid))
+	if (is_filter_pid_parent_any_level(t) == 1)
 		tcpv6_events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;

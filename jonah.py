@@ -18,15 +18,16 @@ bpf_ops = BPF(src_file="bpf_progs/bpf_ops.c")
 
 execve_fnname = bpf_ops.get_syscall_fnname("execve")
 bpf_ops.attach_kprobe(event=execve_fnname, fn_name="syscall__execve")
-#bpf_ops.attach_kprobe(event="vfs_read",   fn_name="do_read")
-#bpf_ops.attach_kprobe(event="vfs_write",  fn_name="do_write")
-#bpf_ops.attach_kprobe(event="vfs_open",   fn_name="do_open")
-#bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
+bpf_ops.attach_kprobe(event="vfs_read",   fn_name="do_read")
+bpf_ops.attach_kprobe(event="vfs_write",  fn_name="do_write")
+bpf_ops.attach_kprobe(event="vfs_open",   fn_name="do_open")
+bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
 
-#bpf_ops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-#bpf_ops.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-#bpf_ops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
-#bpf_ops.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+
+bpf_ops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
+#bpf_ops.attach_kretprobe(event="tcp_v4_disconnect", fn_name="do_tcpv4")
+bpf_ops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+#bpf_ops.attach_kretprobe(event="tcp_v6_disconnect", fn_name="do_tcpv6")
 
 def log_file_event(cpu, data, size):
     event = bpf_ops["events"].event(data)
@@ -63,14 +64,15 @@ def log_tcpv6_event(cpu, data, size):
 bpf_ops["events"].open_perf_buffer(log_file_event)
 bpf_ops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
 bpf_ops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
-
 bpf_ops["execv_events"].open_perf_buffer(log_execv_event)
+
 def log_thread():
     while True:
         bpf_ops.perf_buffer_poll()
 
 _thread.start_new_thread(log_thread, ())
 
+print("STARTING DOCKER\n")
 while True:
     try:
         pass
