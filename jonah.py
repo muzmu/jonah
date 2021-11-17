@@ -16,7 +16,9 @@ log = open("/home/fedora/jonah/jonah.log", "w+")
 
 bpf_ops = BPF(src_file="bpf_progs/bpf_ops.c")
 
-bpf_ops.attach_kprobe(event="vfs_read",   fn_name="do_read")
+execve_fnname = bpf_ops.get_syscall_fnname("execve")
+bpf_ops.attach_kprobe(event=execve_fnname, fn_name="syscall__execve")
+#bpf_ops.attach_kprobe(event="vfs_read",   fn_name="do_read")
 #bpf_ops.attach_kprobe(event="vfs_write",  fn_name="do_write")
 #bpf_ops.attach_kprobe(event="vfs_open",   fn_name="do_open")
 #bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
@@ -33,6 +35,14 @@ def log_file_event(cpu, data, size):
     print(e)
     #log.write(e)
     #log.flush()
+
+def log_execv_event(cpu, data, size):
+    event = bpf_ops["execv_events"].event(data)
+    e = "PID: %s \t NAME: %s \n" % (event.pid, event.comm.decode('utf-8', 'replace'))#, event.path_dir.decode('utf-8', 'replace'))
+    print(e)
+    #log.write(e)
+    #log.flush()
+
 
 def log_tcpv4_event(cpu, data, size):
     event = bpf_ops["tcpv4_events"].event(data)
@@ -54,6 +64,7 @@ bpf_ops["events"].open_perf_buffer(log_file_event)
 bpf_ops["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
 bpf_ops["tcpv6_events"].open_perf_buffer(log_tcpv4_event)
 
+bpf_ops["execv_events"].open_perf_buffer(log_execv_event)
 def log_thread():
     while True:
         bpf_ops.perf_buffer_poll()

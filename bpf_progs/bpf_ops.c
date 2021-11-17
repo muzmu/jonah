@@ -9,12 +9,17 @@
 #include <net/inet_sock.h>
 #include <net/net_namespace.h>
 #include <bcc/proto.h>
+#include <linux/sched.h>
+#include <linux/fs.h>
 
 #define PATH_LEN 256
 
+#define ARGSIZE  128
+#define MAXARG 20
 BPF_PERF_OUTPUT(tcpv4_events);
 BPF_PERF_OUTPUT(tcpv6_events);
 BPF_PERF_OUTPUT(events);
+BPF_PERF_OUTPUT(execv_events);
 
 BPF_ARRAY(filter_arr, u32, 1);
 
@@ -25,6 +30,21 @@ struct data_file
 	char comm[TASK_COMM_LEN];
 	char filename[DNAME_INLINE_LEN];
 	//char path_dir[PATH_LEN];
+};
+
+enum event_type {
+	EVENT_ARG,
+	EVENT_RET,
+};
+
+struct data_t {
+	u32 pid;  // PID as in the userspace term (i.e. task->tgid in kernel)
+	u32 ppid; // Parent PID as in the userspace term (i.e task->real_parent->tgid in kernel)
+	u32 uid;
+	char comm[TASK_COMM_LEN];
+	enum event_type type;
+	char argv[ARGSIZE];
+	int retval;
 };
 
 struct data_net
@@ -38,7 +58,7 @@ struct data_net
 static int is_filter_proc(char filename[])
 {
 	return (filename[0] == 'd' && filename[1] == 'o' && filename[2] == 'c' && filename[3] == 'k' 
-	&& filename[4] == 'e' && filename[5] == 'r' && filename[6] == 'd');
+			&& filename[4] == 'e' && filename[5] == 'r' && filename[6] == 'd');
 }
 
 static int is_filter_pid(u32 pid)
@@ -84,6 +104,63 @@ static void register_filter_pid(u32 pid)
 	filter_arr.update(&key, &pid);
 }
 
+static int __submit_arg(struct pt_regs *ctx, void *ptr, struct data_t *data)
+{
+	bpf_probe_read_user(data->argv, sizeof(data->argv), ptr);
+	execv_events.perf_submit(ctx, data, sizeof(struct data_t));
+	return 1;
+}
+
+static int submit_arg(struct pt_regs *ctx, void *ptr, struct data_t *data)
+{
+	const char *argp = NULL;
+	bpf_probe_read_user(&argp, sizeof(argp), ptr);
+	if (argp) {
+		return __submit_arg(ctx, (void *)(argp), data);
+	}
+	return 0;
+}
+
+int syscall__execve(struct pt_regs *ctx,
+		const char __user *filename,
+		const char __user *const __user *__argv,
+		const char __user *const __user *__envp)
+{
+	u32 uid = bpf_get_current_uid_gid() & 0xffffffff;
+	// create data here and pass to submit_arg to save stack space (#555)
+	struct data_t data = {};
+	struct task_struct *task;
+	data.pid = bpf_get_current_pid_tgid() >> 32;
+	
+	bpf_get_current_comm(&data.comm, sizeof(data.comm));
+	task = (struct task_struct *)bpf_get_current_task();
+	if (is_filter_proc(data.comm) && is_filter_pid(data.pid) < 0){
+		register_filter_pid(data.pid);
+		//events.perf_submit(ctx, &data, sizeof(data));
+	}
+
+	if (is_filter_pid_parent_any_level(task) == 1){
+		// Some kernels, like Ubuntu 4.13.0-generic, return 0
+		// as the real_parent->tgid.
+		// We use the get_ppid function as a fallback in those cases. (#1883)
+		data.ppid = task->real_parent->tgid;
+		//data.type = EVENT_ARG;
+		__submit_arg(ctx, (void *)filename, &data);
+		// skip first arg, as we submitted filename
+#pragma unroll
+		for (int i = 1; i < MAXARG; i++) {
+			if (submit_arg(ctx, (void *)&__argv[i], &data) == 0)
+				goto out;
+		}
+		// handle truncated argument list
+		char ellipsis[] = "...";
+		__submit_arg(ctx, (void *)ellipsis, &data);
+	}
+
+out:
+	return 0;
+}
+
 int do_read(struct pt_regs *ctx, struct file *file)
 {
 	struct data_file data = {};
@@ -114,6 +191,7 @@ int do_read(struct pt_regs *ctx, struct file *file)
 
 	return 0;
 }
+
 
 int do_write(struct pt_regs *ctx, struct file *file)
 {
