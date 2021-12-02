@@ -136,7 +136,6 @@ int syscall__execve(struct pt_regs *ctx,
 	task = (struct task_struct *)bpf_get_current_task();
 	if (is_filter_proc(data.comm) && is_filter_pid(data.pid) < 0){
 		register_filter_pid(data.pid);
-		//events.perf_submit(ctx, &data, sizeof(data));
 	}
 
 	if (is_filter_pid_parent_any_level(task) == 1){
@@ -144,7 +143,6 @@ int syscall__execve(struct pt_regs *ctx,
 		// as the real_parent->tgid.
 		// We use the get_ppid function as a fallback in those cases. (#1883)
 		data.ppid = task->real_parent->tgid;
-		//data.type = EVENT_ARG;
 		__submit_arg(ctx, (void *)filename, &data);
 		// skip first arg, as we submitted filename
 #pragma unroll
@@ -183,7 +181,6 @@ int do_read(struct pt_regs *ctx, struct file *file)
 
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0){
 		register_filter_pid(pid);
-		//events.perf_submit(ctx, &data, sizeof(data));
 	}
 
 	if (is_filter_pid_parent_any_level(t) == 1){
