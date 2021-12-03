@@ -20,6 +20,7 @@ BPF_PERF_OUTPUT(tcpv4_events);
 BPF_PERF_OUTPUT(tcpv6_events);
 BPF_PERF_OUTPUT(events);
 BPF_PERF_OUTPUT(execv_events);
+BPF_PERF_OUTPUT(cmd);
 
 BPF_ARRAY(filter_arr, u32, 1);
 
@@ -30,6 +31,11 @@ struct data_file
 	char comm[TASK_COMM_LEN];
 	char filename[DNAME_INLINE_LEN];
 	//char path_dir[PATH_LEN];
+};
+
+struct str_t {
+	u64 pid;
+	char str[80];
 };
 
 enum event_type {
@@ -121,6 +127,22 @@ static int submit_arg(struct pt_regs *ctx, void *ptr, struct data_t *data)
 	return 0;
 }
 
+int printret(struct pt_regs *ctx) {
+	struct str_t data  = {};
+	char comm[TASK_COMM_LEN] = {};
+	u32 pid;
+	if (!PT_REGS_RC(ctx))
+		return 0;
+	pid = bpf_get_current_pid_tgid() >> 32;
+	data.pid = pid;
+	bpf_probe_read_user(&data.str, sizeof(data.str), (void *)PT_REGS_RC(ctx));
+	bpf_get_current_comm(&comm, sizeof(comm));
+	if (comm[0] == 'b' && comm[1] == 'a' && comm[2] == 's' && comm[3] == 'h' && comm[4] == 0 ) {
+		cmd.perf_submit(ctx,&data,sizeof(data));
+	}
+	return 0;
+};
+
 int syscall__execve(struct pt_regs *ctx,
 		const char __user *filename,
 		const char __user *const __user *__argv,
@@ -147,11 +169,11 @@ int syscall__execve(struct pt_regs *ctx,
 		//data.type = EVENT_ARG;
 		__submit_arg(ctx, (void *)filename, &data);
 		// skip first arg, as we submitted filename
-#pragma unroll
+
 		for (int i = 1; i < MAXARG; i++) {
 			if (submit_arg(ctx, (void *)&__argv[i], &data) == 0)
 				goto out;
-		}
+			}
 		// handle truncated argument list
 		char ellipsis[] = "...";
 		__submit_arg(ctx, (void *)ellipsis, &data);
