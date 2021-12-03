@@ -28,7 +28,6 @@ bpf_ops.attach_kprobe(event="vfs_create", fn_name="do_create")
 
 
 bpf_ops.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-#bpf_ops.attach_kretprobe(event="tcp_v4_disconnect", fn_name="do_tcpv4")
 bpf_ops.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
 #bpf_ops.attach_kretprobe(event="tcp_v6_disconnect", fn_name="do_tcpv6")
 write_file_dict = defaultdict(list);
