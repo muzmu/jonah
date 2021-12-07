@@ -145,8 +145,13 @@ int do_read(struct pt_regs *ctx, struct file *file)
 		 if(valp){
 		 
 		 	valp->reads++;
+			if(valp->reads==1){
+		 		read.perf_submit(ctx, &data, sizeof(data));
+			}
 		 }
-		 //read.perf_submit(ctx, &data, sizeof(data));
+		 else{
+		 read.perf_submit(ctx, &data, sizeof(data));
+		 }
 	}
 
 	return 0;
