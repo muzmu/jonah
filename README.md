@@ -49,6 +49,12 @@ It targets only System Administrators and builders of containers.
 
 It will not target end users of the built containers; however, end users can use the attested logs to make sure the container was built according to their requirements.
 
+## Users Stories
+As a user, I want to have the logs filter the information related to docker files(read, write, open, close).
+As a user, I want to monitor the network connections during docker build.
+As a user, I want to attach a log file to an image, so that I can verify that the build process is correct.
+
+
 ## Scope and Features Of The Project:
 
 - Ensure transparent build processes
@@ -64,10 +70,15 @@ It will not target end users of the built containers; however, end users can use
 
 ### Tools to be used:
 - Docker: A way to realize operating system virtualization, builds container images from Dockerfiles.
-- eBPF: run custom code in the Linux kernel. eBPF programs are event-driven and are run when the kernel or an application passes a certain hook point.
-- oras: provides a way to attach attestation files to container images
+- eBPF: Run custom code in the Linux kernel. DBPF programs are event-driven and are run when the kernel or an application passes a certain hook point.
+- oras: Tool to push and pull objects to and from an OCI Registry, provides a way to attach attestation files to container images
 ### Possible stretch tools:
 - Whaler: reverse engineers a Dockerfile from a container image, reveals files added with the ADD COPY commands and provides miscellaneous information such as user it runs as and environment variables
+- Connect each system action to its specific line in the Dockerfile
+- Detect irregularities in subsequent builds to detect tampering of the Dockerfile
+- Use Whaler to reverse engineer the Dockerfile and check any irregularities in it versus the attestation document
+- Use sigstore database to store and distribute tamper-free attestation records
+
 
 ### Global Architectural Structure Of the Project: 
 
@@ -75,7 +86,7 @@ It will not target end users of the built containers; however, end users can use
 
 - BPF System hooks are used to capture all relevant information regarding the container build changes within the local system, in this case, network calls and file access and their modifications.
 - All captured information will be recorded into the attestation file.
-- The attestation file will be attached to the corresponding container image using oras, as well as stored locally.
+- The attestation file will be attached to the corresponding container image using oras.
 - Any user who wishes to audit the build process can access the attestation file.
 
 ### Key Design Decisions:
@@ -90,13 +101,6 @@ It will not target end users of the built containers; however, end users can use
 ### Minimum Viable Product:
 
 Background monitor system able to attach system actions to the finished build image in a formatted attestation file. 
-
-### Stretch goals:
-
-- Connect each system action to its specific line in the Dockerfile
-- Detect irregularities in subsequent builds to detect tampering of the Dockerfile
-- Use Whaler to reverse engineer the Dockerfile and check any irregularities in it versus the attestation document
-- Use sigstore database to store and distribute tamper-free attestation records
 
 
 ## Release Planning:
