@@ -1,8 +1,0 @@
-#include <linux/path.h>
-#include <linux/dcache.h>
-
-kprobe:vfs_open,
-kprobe:vfs_create
-{
-	printf("file accessed: %s\n", str(((struct path *)arg0)->dentry->d_name.name));
-}
