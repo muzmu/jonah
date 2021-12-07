@@ -40,7 +40,7 @@ https://drive.google.com/file/d/1F6qK_oBn-TfsmSifQMYQqN1nWUyhRskI/view?usp=shari
 1. Clone this git repo
 2. Run "sudo make install" in the repo folder to install jonah as a daemon service
 3. Copy jonah.sh into your docker folder
-4. Run "./jonah.sh <TAG NAME>" with <TAG NAME> being whatever tag you would like to add to the log file in ORAS
+4. Run "./jonah.sh TAG_NAME" with TAG_NAME being whatever tag you would like to add to the log file in ORAS
 5. Run "sudo make uninstall" in the repo folder to uninstall jonah as a daemon service if need be
 
 ## Vision and Goals Of The Project:
