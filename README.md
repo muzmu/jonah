@@ -63,7 +63,7 @@ It will not target end users of the built containers; however, end users can use
 ## Solution Concept:
 
 ### Tools to be used:
-- Docker: builds container images from Dockerfiles.
+- Docker: A way to realize operating system virtualization, builds container images from Dockerfiles.
 - eBPF: run custom code in the Linux kernel. eBPF programs are event-driven and are run when the kernel or an application passes a certain hook point.
 - oras: provides a way to attach attestation files to container images
 ### Possible stretch tools:
