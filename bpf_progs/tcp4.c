@@ -19,6 +19,7 @@
 BPF_PERF_OUTPUT(tcpv4_events);
 
 BPF_ARRAY(filter_arr, u32, 1);
+BPF_HASH(currsock, u32, struct sock *);
 
 struct data_file
 {
@@ -52,7 +53,8 @@ struct data_t {
 struct data_net
 {
 	u32 pid;
-	u32 addr;
+	u32 saddr;
+	u32 daddr;
 	char op[10];
 	char comm[TASK_COMM_LEN];
 };
@@ -105,6 +107,7 @@ static void register_filter_pid(u32 pid)
 	u32 key = 0;
 	filter_arr.update(&key, &pid);
 }
+
 int do_tcpv4(struct pt_regs *ctx, struct sock *sk)
 {
 	struct data_net data = {};
@@ -112,15 +115,51 @@ int do_tcpv4(struct pt_regs *ctx, struct sock *sk)
 	struct inet_sock *sockp = (struct inet_sock *)skp;
 	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
 
-	u32 saddr = 0;
-	bpf_probe_read_kernel(&saddr, sizeof(saddr), &sockp->inet_saddr);
+	data.saddr = sk->__sk_common.skc_rcv_saddr;
+	data.daddr = sk->__sk_common.skc_daddr;
+
+	//bpf_probe_read_kernel(&saddr, sizeof(saddr), &sockp->inet_daddr);
 
 	u32 pid;
 	pid = bpf_get_current_pid_tgid() >> 32;
 	data.pid = pid;
 
 	strcpy(data.op, "TCP IPv4");
-	data.addr = saddr;
+	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
+
+	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
+		register_filter_pid(pid);
+
+	if (1 || is_filter_pid_parent_any_level(t) == 1)
+		currsock.update(&pid,&sk);
+
+	return 0;
+}
+
+int do_tcpv4_ret(struct pt_regs *ctx)
+{
+	struct data_net data = {};
+	struct sock **skpp;
+	//struct inet_sock *sockp = (struct inet_sock *)skp;
+	
+	u32 pid;
+	pid = bpf_get_current_pid_tgid() >> 32;
+	
+	struct task_struct *t = (struct task_struct *)bpf_get_current_task();
+	
+	skpp=currsock.lookup(&pid);
+	if (skpp == 0) {
+		        return 0;   // missed entry
+			    }
+	struct sock *sk = *skpp;
+	data.saddr = sk->__sk_common.skc_rcv_saddr;
+	data.daddr = sk->__sk_common.skc_daddr;
+
+	//bpf_probe_read_kernel(&saddr, sizeof(saddr), &sockp->inet_daddr);
+
+	data.pid = pid;
+
+	strcpy(data.op, "TCP IPv4");
 	bpf_get_current_comm(&(data.comm), sizeof(data.comm));
 
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
@@ -131,4 +170,3 @@ int do_tcpv4(struct pt_regs *ctx, struct sock *sk)
 
 	return 0;
 }
-
