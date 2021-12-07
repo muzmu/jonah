@@ -18,7 +18,7 @@ https://www.youtube.com/watch?v=jNb1uLlUOnU
 
 ## Team Members:
 
-- Ryan Sullivan (ryanbs@bu.edu)
+- Ryan B Sullivan (ryanbs@bu.edu)
 - Qipeng Zou (cloris@bu.edu)
 - Jessica Martinez Marquez (jessmtzm@bu.edu)
 - Muzammil Hussain (muz@bu.edu)
