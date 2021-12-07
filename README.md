@@ -47,8 +47,8 @@ https://drive.google.com/file/d/1F6qK_oBn-TfsmSifQMYQqN1nWUyhRskI/view?usp=shari
 
 Attestable Container Build will provide a monitoring service to record network connections and file accesses during a container build process. The high level implementation will:
 
-- **Track the whole construction of the container and ensure transparency and observable to the final user of the image**
-- **Provide reviewable documentation of the build process  and make sure all these processes can be traced**
+- **Track the whole construction of the container and ensure transparency and observability to the final user of the image**
+- **Provide reviewable documentation of the build process to make sure all these processes can be traced**
 - **Allow for anyone using the jonah log to check for security compliance of a built Docker images**
 
 Benefits: Observability, Traceability, Compliance
@@ -74,11 +74,10 @@ As a user, I want to attach a log file to an image, so that I can verify that th
 
 - Ensure transparent build processes
   - All network connection will be recorded
-  - All file access and modification will be recorded
+  - All file access and modification (read and write) will be recorded
 - Provide reviewable documentation from the build process
   - All data mentioned will be formatted into an attestation form
 - Allow for efficient audits of the build process
-  - The attestation form will be encrypted with public/private key system
   - The form will be attached to the built container image as an artifact
 
 ## Solution Concept:
@@ -128,7 +127,7 @@ Background monitor system able to attach system actions to the finished build im
 
 - Release 4 (Week 11): Expand on eBPF hooks to capture additional data and build a process tree to track all spawned processes by Docker.
 
-- Release 5 (Week 13): Map system events to dockerfile instruction and attach the log to the docker
+- Release 5 (Week 13): Map system events to dockerfile instruction and attach the log to the dockerfile
 
 - Final Release: MVP
 
