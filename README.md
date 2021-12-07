@@ -115,7 +115,7 @@ Background monitor system able to attach system actions to the finished build im
 
 - Release 4 (Week 11): Expand on eBPF hooks to capture additional data and build a process tree to track all spawned processes by Docker.
 
-- Release 5 (Week 13): Map system events to dockerfile instruction
+- Release 5 (Week 13): Map system events to dockerfile instruction and attach the log to the docker
 
 - Final Release: MVP
 
