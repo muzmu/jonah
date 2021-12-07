@@ -9,6 +9,15 @@ https://youtu.be/dvWrT0H46jM
 ### Sprint 1:
 https://youtu.be/jXRxDKvv2Ww
 
+### Sprint 2:
+https://www.youtube.com/watch?v=jNb1uLlUOnU
+
+### Sprint 3:
+https://youtu.be/sUAkF1inqBw
+
+### Sprint 4:
+https://youtu.be/-OC-mZm1Z3Y
+
 ## Project Owner:
 
 - Shripad J Nadgowda
@@ -23,12 +32,14 @@ https://youtu.be/jXRxDKvv2Ww
 
 ## Vision and Goals Of The Project:
 
-Attestable Container Build will provide a monitoring service to verify network connections and file accesses during a container build process, the high level implementation will:
+Attestable Container Build will provide a monitoring service to record network connections and file accesses during a container build process. The high level implementation will:
 
 - **Track the whole construction of the container and ensure transparency**
 - **Provide reviewable documentation of the build process**
 - **Allow for efficient audits of the build process**
 
+Benefits: Observability, Traceability, Compliance
+The purpose of jonah is to become the building block of a platform used to verify the container build process. 
 
 ## Users/Personas Of The Project:
 
@@ -41,9 +52,7 @@ It will not target end users of the built containers; however, end users can use
 ## Scope and Features Of The Project:
 
 - Ensure transparent build processes
-  - A hash of the Dockerfile will be recorded
-  - A hash of the built image will be recorded
-  - All outside network accesses will be recorded
+  - All network connection will be recorded
   - All file access and modification will be recorded
 - Provide reviewable documentation from the build process
   - All data mentioned will be formatted into an attestation form
@@ -54,8 +63,8 @@ It will not target end users of the built containers; however, end users can use
 ## Solution Concept:
 
 ### Tools to be used:
-- Docker: builds container images from Dockerfiles and installed dependencies
-- eBPF Hooks: points in the Linux kernel where user code can be inserted and ran on specific system actions
+- Docker: builds container images from Dockerfiles.
+- eBPF: run custom code in the Linux kernel. eBPF programs are event-driven and are run when the kernel or an application passes a certain hook point.
 - oras: provides a way to attach attestation files to container images
 - sha256sum: provides tool to encrypt files and get hashes from existing files to protect file validity
 - GnuPG: provides a tool to encrypt files with public/private key pairs to ensure validity of files sent and received
@@ -72,12 +81,13 @@ It will not target end users of the built containers; however, end users can use
 - Any user who wishes to audit the build process can access the attestation file.
 
 ### Key Design Decisions:
-- BPF System action capture: Linux’s BPF system is an extremely lightweight and powerful system that our design can leverage to capture any system action during the build process. While it will also possibly capture outside actionos not pertaining to the build process, we thought it preferable to filter through the excess data than to build a completely custom monitoring system specifically for Dockerfile monitoring.
+- BPF System action capture: Linux’s BPF system is an extremely lightweight and powerful system that our design can leverage to capture any system action during the build process. 
 - Attachment to build image as an artifact: oras allows us to efficiently link the attestation file to the container image without consuming excess data or processing power. Attaching it to the build image itself also assists in later audits as only one file need be located.
 - Public/Private key encryption 
 
 
-## Acceptance criteria:
+### Acceptance criteria:
+
 
 ### Minimum Viable Product:
 
@@ -97,13 +107,11 @@ Background monitor system able to attach system actions to the finished build im
 
 - Release 2 (Week 7): Filter relevant information from collected system data
 
-- Release 3 (Week 9): Formatting of attestation file
+- Release 3 (Week 9): Set up pre-filtering approach to log docker build information
 
-- Release 4 (Week 11): TBD
+- Release 4 (Week 11): Expand on eBPF hooks to capture additional data and build a process tree to track all spawned processes by Docker.
 
-- Release 5 (Week 13): TBD
-
-- Release 6 (Week 15): TBD
+- Release 5 (Week 13): Map system events to dockerfile instruction
 
 - Final Release: MVP
 
