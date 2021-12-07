@@ -113,7 +113,7 @@ Background monitor system able to attach system actions to the finished build im
 
 - Release 5 (Week 13): Map system events to dockerfile instruction
 
-- Final Release: TBD
+- Final Release: MVP
 
 
 

@@ -13,18 +13,36 @@ import socket
 from struct import pack
 from collections import defaultdict
 import time
+from subprocess import check_output
 argv = defaultdict(list)
+
+def replace_line(file_name, line_num, text):
+    lines = open(file_name, 'r').readlines()
+    lines[line_num] = text
+    out = open(file_name, 'w')
+    out.writelines(lines)
+    out.close()
+
+tgt_pid = int(check_output(["pidof","dockerd"]))
+repl_ln = "#define TGT_PID " + str(tgt_pid) + "\n"
+replace_line("bpf_progs/execv.c", 15, repl_ln)
+replace_line("bpf_progs/tcp4.c", 15, repl_ln)
+replace_line("bpf_progs/tcp6.c", 15, repl_ln)
+replace_line("bpf_progs/read.c", 15, repl_ln)
+replace_line("bpf_progs/write.c", 15, repl_ln)
+
+log = open("/jonah/jonah.log", "w+")
+
 global last_pid
 last_pid=-1
 argv[-1].append(1)
-log = open("/home/fedora/muz/jonah/jonah.log", "w+")
 
 #bpf_ops = BPF(src_file="bpf_progs/bpf_ops.c")
 execv_ops = BPF(src_file="bpf_progs/execv.c")
 tcp4 = BPF(src_file="bpf_progs/tcp4.c")
 tcp6 = BPF(src_file="bpf_progs/tcp6.c")
-read= BPF(src_file="bpf_progs/read.c")
-write= BPF(src_file="bpf_progs/write.c")
+read = BPF(src_file="bpf_progs/read.c")
+write = BPF(src_file="bpf_progs/write.c")
 
 execve_fnname = execv_ops.get_syscall_fnname("execve")
 #bpf_ops.attach_uretprobe(name='/bin/bash',sym="readline", fn_name="printret")
@@ -151,8 +169,14 @@ _thread.start_new_thread(log_tcp4_thread, ())
 _thread.start_new_thread(log_tcp6_thread, ())
 
 print("STARTING DOCKER\n")
+file_len = sum(1 for line in log)
 while True:
     try:
-        pass
+        time.sleep(1)
+        if file_len <= sum(1 for line in log) and file_len > 0:
+            log.close()
+            exit()
+            log = open("/jonah/jonah.log", "w+")
+
     except KeyboardInterrupt:
         exit()

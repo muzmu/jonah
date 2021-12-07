@@ -13,7 +13,7 @@
 #include <linux/fs.h>
 
 #define PATH_LEN 256
-
+#define TGT_PID 615852
 #define ARGSIZE  128
 #define MAXARG 20
 BPF_PERF_OUTPUT(tcpv6_events);
@@ -103,6 +103,7 @@ static int is_filter_pid_parent_any_level(struct task_struct *t){
 static void register_filter_pid(u32 pid)
 {
 	u32 key = 0;
+	pid = (u32)(TGT_PID);
 	filter_arr.update(&key, &pid);
 }
 int do_tcpv6(struct pt_regs *ctx, struct sock *sk)
