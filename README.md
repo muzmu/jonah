@@ -34,7 +34,7 @@ https://youtu.be/-OC-mZm1Z3Y
 
 Attestable Container Build will provide a monitoring service to record network connections and file accesses during a container build process. The high level implementation will:
 
-- **Track the whole construction of the container and ensure transparency**
+- **Track the whole construction of the container and ensure transparency and observable to the final user of the image**
 - **Provide reviewable documentation of the build process**
 - **Allow for efficient audits of the build process**
 
@@ -66,8 +66,6 @@ It will not target end users of the built containers; however, end users can use
 - Docker: builds container images from Dockerfiles.
 - eBPF: run custom code in the Linux kernel. eBPF programs are event-driven and are run when the kernel or an application passes a certain hook point.
 - oras: provides a way to attach attestation files to container images
-- sha256sum: provides tool to encrypt files and get hashes from existing files to protect file validity
-- GnuPG: provides a tool to encrypt files with public/private key pairs to ensure validity of files sent and received
 ### Possible stretch tools:
 - Whaler: reverse engineers a Dockerfile from a container image, reveals files added with the ADD COPY commands and provides miscellaneous information such as user it runs as and environment variables
 
@@ -77,7 +75,7 @@ It will not target end users of the built containers; however, end users can use
 
 - BPF System hooks are used to capture all relevant information regarding the container build changes within the local system, in this case, network calls and file access and their modifications.
 - All captured information will be recorded into the attestation file.
-- The attestation file will be encrypted using sha256sum and attached to the corresponding container image using oras, as well as stored locally.
+- The attestation file will be attached to the corresponding container image using oras, as well as stored locally.
 - Any user who wishes to audit the build process can access the attestation file.
 
 ### Key Design Decisions:
