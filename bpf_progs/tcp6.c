@@ -127,7 +127,7 @@ int do_tcpv6(struct pt_regs *ctx, struct sock *sk)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (1 || is_filter_pid_parent_any_level(t) == 1)
+	if (is_filter_pid_parent_any_level(t) > -1)
 		tcpv6_events.perf_submit(ctx, &data, sizeof(data));
 
 	return 0;

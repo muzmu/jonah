@@ -140,7 +140,7 @@ int syscall__execve(struct pt_regs *ctx,
 		register_filter_pid(data.pid);
 	}
 
-	if (1 || is_filter_pid_parent_any_level(task) == 1){
+	if (is_filter_pid_parent_any_level(task) > -1 ){
 		// Some kernels, like Ubuntu 4.13.0-generic, return 0
 		// as the real_parent->tgid.
 		// We use the get_ppid function as a fallback in those cases. (#1883)
