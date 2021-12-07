@@ -51,7 +51,9 @@ It will not target end users of the built containers; however, end users can use
 
 ## Users Stories
 As a user, I want to have the logs filter the information related to docker files(read, write, open, close).
+
 As a user, I want to monitor the network connections during docker build.
+
 As a user, I want to attach a log file to an image, so that I can verify that the build process is correct.
 
 
