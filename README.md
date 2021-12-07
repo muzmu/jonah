@@ -30,6 +30,13 @@ https://youtu.be/-OC-mZm1Z3Y
 - Muzammil Hussain (muz@bu.edu)
 - Ryte Richard (ryte@bu.edu)
 
+## Install Steps:
+1. Clone this git repo
+2. Run "sudo make install" in the repo folder to install jonah as a daemon service
+3. Copy jonah.sh into your docker folder
+4. Run "./jonah.sh <TAG NAME>" with <TAG NAME> being whatever tag you would like to add to the log file in ORAS
+5. Run "sudo make uninstall" in the repo folder to uninstall jonah as a daemon service if need be
+
 ## Vision and Goals Of The Project:
 
 Attestable Container Build will provide a monitoring service to record network connections and file accesses during a container build process. The high level implementation will:
