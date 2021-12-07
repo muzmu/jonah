@@ -35,8 +35,8 @@ https://youtu.be/-OC-mZm1Z3Y
 Attestable Container Build will provide a monitoring service to record network connections and file accesses during a container build process. The high level implementation will:
 
 - **Track the whole construction of the container and ensure transparency and observable to the final user of the image**
-- **Provide reviewable documentation of the build process**
-- **Allow for efficient audits of the build process**
+- **Provide reviewable documentation of the build process  and make sure all these processes can be traced**
+- **Allow for anyone using the jonah log to check for security compliance of a built Docker images**
 
 Benefits: Observability, Traceability, Compliance
 The purpose of jonah is to become the building block of a platform used to verify the container build process. 
