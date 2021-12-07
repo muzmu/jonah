@@ -14,7 +14,9 @@ from struct import pack
 from collections import defaultdict
 import time
 argv = defaultdict(list)
-
+global last_pid
+last_pid=-1
+argv[-1].append(1)
 log = open("/home/fedora/muz/jonah/jonah.log", "w+")
 
 #bpf_ops = BPF(src_file="bpf_progs/bpf_ops.c")
@@ -34,80 +36,74 @@ write.attach_kprobe(event="vfs_write",  fn_name="do_write")
 
 
 tcp4.attach_kprobe(event="tcp_v4_connect", fn_name="do_tcpv4")
-tcp6.attach_kprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
+tcp4.attach_kretprobe(event="tcp_v4_connect", fn_name="do_tcpv4_ret")
+tcp6.attach_kretprobe(event="tcp_v6_connect", fn_name="do_tcpv6")
 #bpf_ops.attach_kretprobe(event="tcp_v6_disconnect", fn_name="do_tcpv6")
 write_file_dict = defaultdict(list);
 read_file_dict = defaultdict(list);
 tcp4_dict = defaultdict(list);
 tcp6_dict = defaultdict(list);
 
-def log_read_event():
-    time.sleep(4)
-    counts = read.get_table("counts")
+def log_read_event(cpu,data,size):
+    #time.sleep(4)
+    #counts = read.get_table("counts")
     #for key,value in counts.items():
      #   print(key.pid,key.filename)
 
-    '''event = read["read"].event(data)
+    event = read["read"].event(data)
     filename = str(event.filename.decode('utf-8', 'replace'))
     event_type = str(event.str.decode('utf-8', 'replace'))
     pid = int(event.pid)
-    try:
-        f = open("/proc/"+str(pid)+"/cmdline")
-        #print(f.readline())
-    except:
-        a=1
-    #print(event_type,filename)
     
     read_file_dict[pid].append(filename)
     e = "PID: %s \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode(
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))#, event.path_dir.decode('utf-8', 'replace'))
     #print(e)
-    #log.write(e)
-    #log.flush()'''
+    log.write(e)
+    log.flush()
 
 
-def log_write_event():
-    time.sleep(4)
-    counts = write.get_table("counts")
-    for key,value in counts.items():
-        print(key.pid,key.filename)
+def log_write_event(cpu,data,size):
+    #time.sleep(4)
+    #counts = write.get_table("counts")
+    #for key,value in counts.items():
+     #   print(key.pid,key.filename)
         
-    '''event = write["write"].event(data)
+    event = write["write"].event(data)
     filename = str(event.filename.decode('utf-8', 'replace'))
     event_type = str(event.str.decode('utf-8', 'replace'))
     pid = int(event.pid)
-    try:
-        f = open("/proc/"+str(pid)+"/cmdline")
-        #print(f.readline())
-    except:
-        a=1
     #print(event_type,filename)
     write_file_dict[pid].append(filename)
     e = "PID: %s \t OP: %s \t NAME: %s \t FILE: %s \n" % (event.pid, event.str.decode(
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.filename.decode('utf-8', 'replace'))#, event.path_dir.decode('utf-8', 'replace'))
-   # print(e)
-    #log.write(e)
-    #log.flush()'''
+    #print(e)
+    log.write(e)
+    log.flush()
 
 def log_execv_event(cpu, data, size):
     event = execv_ops["execv_events"].event(data)
-    argv[event.pid].append(event.argv)
+    argv[event.pid].append(event.argv.decode('utf-8','replace'))
+    if argv[-1][0] != event.pid and argv[-1][0] != -1:
+        #write logs
+        #print(argv[argv[-1][0]])
+    
 
-    #print(argv)
-    #e = "PID: %s \t NAME: %s " % (event.pid, event.comm.decode('utf-8', 'replace'),event.argv[0])#, event.path_dir.decode('utf-8', 'replace'))
+        e = "PID: %d \t NAME: %s \n" % (argv[-1][0],str(argv[argv[-1][0]]))
     #print(e)
-    #log.write(e)
-    #log.flush()
+        argv[-1][0]=event.pid
+        log.write(e)
+        log.flush()
 
 def log_tcpv4_event(cpu, data, size):
     event = tcp4["tcpv4_events"].event(data)
-    e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %-39s \n" % (event.pid, event.op.decode(
-        'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), inet_ntop(AF_INET, pack("I", event.addr)).encode())
-    #print(e)
-    tcp4_dict[event.pid].append(inet_ntop(AF_INET, pack("I", event.addr)).encode())
-   # print(tcp4_dict)
-    #log.write(e)
-    #log.flush()
+    e = "PID: %d \t OP: %s \t NAME: %s \t ADDR: %s \n" % (event.pid, event.op.decode(
+        'utf-8', 'replace'), event.comm.decode('utf-8', 'replace').encode(), inet_ntop(AF_INET, pack("I", event.daddr)))
+    #print(event.saddr,event.daddr)
+    tcp4_dict[event.pid].append(inet_ntop(AF_INET, pack("I", event.daddr)).encode())
+    #print(tcp4_dict)
+    log.write(e)
+    log.flush()
 
 def log_tcpv6_event(cpu, data, size):
     event = tcp6["tcpv6_events"].event(data)
@@ -116,28 +112,27 @@ def log_tcpv6_event(cpu, data, size):
         'utf-8', 'replace'), event.comm.decode('utf-8', 'replace'), event.addr)
     #print(e)
     #print(tcp6_dict)
-    #log.write(e)
-    #log.flush()
+    log.write(e)
+    log.flush()
 
 def log_cmdline(cpu,data,size):
     event=bpf_ops["cmd"].event(data)
     #print(event.pid,event.str)
 
 #bpf_ops["cmd"].open_perf_buffer(log_cmdline)
-#read["read"].open_perf_buffer(log_read_event)
-#write["write"].open_perf_buffer(log_write_event)
+read["read"].open_perf_buffer(log_read_event)
+write["write"].open_perf_buffer(log_write_event)
 tcp4["tcpv4_events"].open_perf_buffer(log_tcpv4_event)
 tcp6["tcpv6_events"].open_perf_buffer(log_tcpv6_event)
 execv_ops["execv_events"].open_perf_buffer(log_execv_event)
 
 def log_read_ops_thread():
     while True:
-        log_read_event()
-
+        read.perf_buffer_poll()
 
 def log_write_ops_thread():
     while True:
-        log_write_event()
+        write.perf_buffer_poll()
 
 def log_execv_ops_thread():
     while True:

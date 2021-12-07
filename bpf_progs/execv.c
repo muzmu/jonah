@@ -103,7 +103,6 @@ static int is_filter_pid_parent_any_level(struct task_struct *t){
 static void register_filter_pid(u32 pid)
 {
 	u32 key = 0;
-	pid = 615852;
 	filter_arr.update(&key, &pid);
 }
 
@@ -140,7 +139,7 @@ int syscall__execve(struct pt_regs *ctx,
 		register_filter_pid(data.pid);
 	}
 
-	if (is_filter_pid_parent_any_level(task) == 1){
+	if (1 || is_filter_pid_parent_any_level(task) == 1){
 		// Some kernels, like Ubuntu 4.13.0-generic, return 0
 		// as the real_parent->tgid.
 		// We use the get_ppid function as a fallback in those cases. (#1883)

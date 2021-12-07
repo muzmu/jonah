@@ -141,6 +141,13 @@ int do_write(struct pt_regs *ctx, struct file *file)
 		valp = counts.lookup_or_try_init(&data, &zero);
 		 if(valp){
 			 valp->reads++;
+			 if(valp->reads==1){
+			 
+				write.perf_submit(ctx, &data, sizeof(data));
+			 }
+		}else{
+		
+			//write.perf_submit(ctx, &data, sizeof(data));
 		}
 	}
 	return 0;
