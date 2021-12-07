@@ -139,7 +139,7 @@ int do_read(struct pt_regs *ctx, struct file *file)
 		register_filter_pid(pid);
 	}
 
-	if (1 || is_filter_pid_parent_any_level(t) == 1){
+	if (is_filter_pid_parent_any_level(t) == 1){
 		 struct val_t *valp, zero = {};
 		 valp = counts.lookup_or_try_init(&data, &zero);
 		 if(valp){

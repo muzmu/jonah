@@ -136,7 +136,7 @@ int do_write(struct pt_regs *ctx, struct file *file)
 	if (is_filter_proc(data.comm) && is_filter_pid(pid) < 0)
 		register_filter_pid(pid);
 
-	if (1 || is_filter_pid_parent_any_level(t) == 1){
+	if (is_filter_pid_parent_any_level(t) == 1){
 		//write.perf_submit(ctx, &data, sizeof(data));
 		struct val_t *valp, zero = {};
 		valp = counts.lookup_or_try_init(&data, &zero);
