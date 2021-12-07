@@ -105,7 +105,7 @@ Background monitor system able to attach system actions to the finished build im
 
 - Release 6 (Week 15): TBD
 
-- Final Release: TBD
+- Final Release: MVP
 
 
 
